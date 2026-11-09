@@ -88,7 +88,7 @@ def heading(text):
     if s in ('修改意见','审看意见','审片意见','主任意见','主任审片意见','主任修改意见','主任审看意见','领导意见','领导审片意见','领导修改意见','领导审看意见','领导点评'):return 'review_opinion'
     # Preserve compound headings as one section, with the original responsibility labels.
     if re.fullmatch(r'(?:修改意见|审看意见|审片意见)(?:及|和|与).{0,8}主任(?:点评|意见|审片意见)',s):return 'review_opinion'
-    if re.fullmatch(r'.{0,4}主任(?:意见|审片意见|修改意见|审看意见)',s):return 'review_opinion'
+    if re.fullmatch(r'.{0,4}主任(?:意见|点评|审片意见|修改意见|审看意见)',s):return 'review_opinion'
     return None
 
 def parse(blocks,filename):
@@ -153,7 +153,7 @@ def validate(rec,blocks,filename):
             used+=s.source_block_ids
             if s.heading_id:used.append(s.heading_id)
             if s.type=='unclassified':issues.append('存在未归类原文')
-            if '主任点评' in s.original_heading:issues.append('复合栏目责任主体需核对')
+            if '主任点评' in s.original_heading and re.search(r'(?:修改意见|审看意见|审片意见)\s*(?:及|和|与)',s.original_heading):issues.append('复合栏目责任主体需核对')
     if set(used)-ids:raise ValueError('识别返回不存在的来源ID')
     if len(used)!=len(set(used)):issues.append('来源块重复归属')
     if ids-set(used):issues.append('原始正文覆盖不完整')
@@ -297,3 +297,4 @@ def analyze_template(path):
     sizes=Counter(r.font.size.pt for r in runs if r.font.size)
     fonts=Counter(r.font.name for r in runs if r.font.name)
     return {'page_cm':[round(sec.page_width.cm,2),round(sec.page_height.cm,2)],'margins_cm':[round(getattr(sec,k).cm,2) for k in ('top_margin','bottom_margin','left_margin','right_margin')],'sizes':dict(sizes),'fonts':dict(fonts),'paragraphs':[{'style':p.style.name,'alignment':str(p.alignment),'line_spacing':str(p.paragraph_format.line_spacing),'first_indent':str(p.paragraph_format.first_line_indent),'bold':any(r.bold for r in p.runs)} for p in doc.paragraphs]}
+
