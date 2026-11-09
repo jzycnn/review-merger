@@ -1,0 +1,11 @@
+{
+  "font": "宋体",
+  "size": 12,
+  "margin_cm": 2.54,
+  "horizontal_margin_cm": 3.17,
+  "line_spacing": 1.0,
+  "first_indent_pt": 28,
+  "review_label": "审片意见",
+  "show_missing": true,
+  "basis": "固定预设：中文宋体、数字西文Times New Roman、小四12磅、1倍行距、日期之间横线分隔"
+}
