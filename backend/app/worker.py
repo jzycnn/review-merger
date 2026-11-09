@@ -26,7 +26,13 @@ def ai_recognize(blocks):
 def norm(t):return re.sub(r'[\W_]','',t or '')
 def signature(d):
     p=d['program'];bm={b['source_block_id']:b['original_text'] for b in d['blocks']}
-    return [(s['type'],s['original_heading'],[bm[i] for i in s['source_block_ids']]) for s in p['sections']]
+    # Source IDs differ across files. Compare content and classification, including
+    # metadata and ancillary blocks, so a changed end time or note is not lost.
+    return (
+        [(s['type'],s['original_heading'],[bm[i] for i in s['source_block_ids']]) for s in p['sections']],
+        [(b['location'],b['original_text']) for b in d['blocks']],
+        p.get('reviewers_raw'),p.get('review_start'),p.get('review_end'),
+    )
 def process(job):
     d=job['data']; f=get(d['file_id']); fd=f['data']; month=job['month']
     def progress(step):
@@ -63,7 +69,7 @@ def process(job):
         if any(r['data'].get('file_id')==f['id'] and r['data']['program']==data['program'] for r in existing):continue
         candidates=[r for r in existing if r['status']!='superseded' and p.review_date and r['data']['program'].get('column_name')==p.column_name and r['data']['program']['review_date']==p.review_date and (norm(r['data']['program']['program_title'])==norm(p.program_title) or not r['data']['program']['program_title'] or not p.program_title)]
         if candidates:
-            same=next((r for r in candidates if signature(r['data'])==signature(data) and r['data']['program'].get('reviewers_raw')==p.reviewers_raw and r['data']['program'].get('review_start')==p.review_start),None)
+            same=next((r for r in candidates if signature(r['data'])==signature(data)),None)
             if same and p.program_title and same['data']['program']['program_title']:
                 put('duplicate',{'file_id':f['id'],'existing_id':same['id']},month);continue
             data['conflict_with']=candidates[0]['id'];data['issues'].append('同一节目存在版本差异，原稿保持不变')
@@ -125,3 +131,4 @@ def run():
         except Exception:logging.exception('Worker内部异常')
         time.sleep(1)
 if __name__=='__main__':run()
+
